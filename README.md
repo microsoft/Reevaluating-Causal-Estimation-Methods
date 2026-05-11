@@ -5,8 +5,8 @@
 This repository contains the benchmark datasets, replication code, and pre-computed artifacts for the paper
 *Reevaluating Causal Estimation Methods with Data from a Product Release*.
 
-We release two paired datasets — a randomized experiment and a parallel observational study on the
-same population — and a reproducible notebook (`notebooks/01_main_results.ipynb`) demonstrating our
+We release a paired dataset: a randomized experiment and a parallel observational study on the
+same population. We also attach here a reproducible notebook (`notebooks/01_main_results.ipynb`) demonstrating our
 recommended best practices for observational causal estimation.
 
 ## Repository Structure
