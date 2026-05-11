@@ -1,0 +1,14 @@
+numpy==2.2.6
+pandas==2.3.2
+scikit-learn==1.6.1
+lightgbm==4.6.0
+flaml[automl]==2.5.0
+econml==0.16.0
+matplotlib==3.10.5
+seaborn==0.13.2
+statsmodels==0.14.5
+scipy==1.15.3
+pyarrow==22.0.0
+shap>=0.42
+# Optional: only needed if you want to recompute PSM via R's Matching package
+# rpy2==3.6.7
