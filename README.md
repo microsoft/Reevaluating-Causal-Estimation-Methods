@@ -1,6 +1,6 @@
 # Reevaluating Causal Estimation Methods with Data from a Product Release
 
-**Justin Young, Muthoni Ngatia, Eleanor W. Dillon (2026)**
+**Justin Young and Eleanor W. Dillon (2026)**
 
 This repository contains the benchmark datasets, replication code, and pre-computed artifacts for the paper
 *Reevaluating Causal Estimation Methods with Data from a Product Release*.
@@ -117,7 +117,7 @@ Rscript -e 'install.packages("Matching", repos="https://cran.r-project.org")'
 ```bibtex
 @article{young2026reevaluating,
   title={Reevaluating Causal Estimation Methods with Data from a Product Release},
-  author={Young, Justin and Ngatia, Muthoni and Dillon, Eleanor W.},
+  author={Young, Justin and Dillon, Eleanor W.},
   year={2026}
 }
 ```
