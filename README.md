@@ -2,7 +2,7 @@
 **Justin Young and Eleanor W. Dillon (2026)**
 
 This repository contains the benchmark datasets, replication code, and pre-computed artifacts for the paper
-*Reevaluating Causal Estimation Methods with Data from a Product Release*. See draft [here]([url](https://drive.google.com/file/d/1Yj2IUO5r_JsIArNiAQBmkIKFSxCUHc2N/view?usp=sharing)).
+[*Reevaluating Causal Estimation Methods with Data from a Product Release*](https://drive.google.com/file/d/1Yj2IUO5r_JsIArNiAQBmkIKFSxCUHc2N/view?usp=sharing). 
 
 We release a paired dataset: a randomized experiment and a parallel observational study on the
 same population. We also attach here a reproducible notebook (`notebooks/01_main_results.ipynb`) demonstrating our
