@@ -103,13 +103,13 @@ Rscript -e 'install.packages("Matching", repos="https://cran.r-project.org")'
 
 ### Estimators
 
-| Estimator | Method | SE |
-|---|---|---|
-| **Reg** | OLS on `y ~ D + W` | HC1 robust |
-| **OM** | Outcome modeling (T-learner, cross-fit LGBM ensemble) | Guo–Basse (2023) |
-| **IPW** | Inverse probability weighting | Influence function |
-| **PSM** | 1-NN propensity-score matching (R `Matching`) | Abadie–Imbens |
-| **DR** | Cross-fit AIPW via EconML `LinearDRLearner` | EconML analytic |
+| Estimator | Method |
+|---|---|
+| **Reg** | OLS on `y ~ D + W` | 
+| **OM** | Outcome modeling (cross-fit) |
+| **IPW** | Inverse probability weighting | 
+| **PSM** | 1-NN propensity-score matching (R `Matching`) | 
+| **DR** | Cross-fit AIPW via EconML `LinearDRLearner` | 
 
 ## Citation
 
