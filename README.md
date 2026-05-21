@@ -107,7 +107,7 @@ Rscript -e 'install.packages("Matching", repos="https://cran.r-project.org")'
 |---|---|
 | **Reg** | OLS on `y ~ D + W` | 
 | **OM** | Outcome modeling (cross-fit) |
-| **IPW** | Inverse probability weighting | 
+| **IPW** | Inverse probability weighting (cross-fit) | 
 | **PSM** | 1-NN propensity-score matching (R `Matching`) | 
 | **DR** | Cross-fit AIPW via EconML `LinearDRLearner` | 
 
