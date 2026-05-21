@@ -117,7 +117,8 @@ Rscript -e 'install.packages("Matching", repos="https://cran.r-project.org")'
 @article{young2026reevaluating,
   title={Reevaluating Causal Estimation Methods with Data from a Product Release},
   author={Young, Justin and Dillon, Eleanor W.},
-  year={2026}
+  year={2026},
+  url={https://arxiv.org/abs/2601.11845}
 }
 ```
 
