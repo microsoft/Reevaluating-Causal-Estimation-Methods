@@ -8,7 +8,7 @@ matplotlib==3.10.5
 seaborn==0.13.2
 statsmodels==0.14.5
 scipy==1.15.3
-pyarrow==22.0.0
+pyarrow==23.0.1
 shap>=0.42
 # Optional: only needed if you want to recompute PSM via R's Matching package
 # rpy2==3.6.7
