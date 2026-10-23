@@ -6,7 +6,9 @@ This repository contains the benchmark datasets, replication code, and pre-compu
 
 We release a paired dataset: a randomized experiment and a parallel observational study on the
 same population. We also attach here a reproducible notebook (`notebooks/01_main_results.ipynb`) demonstrating our
-recommended best practices for observational causal estimation.
+recommended best practices for observational causal estimation. The main analysis uses
+the same eligibility rule in both sources: `Outcome_Continuous <= 44`, applied to both
+actual treatment arms and to both outcomes.
 
 ## Repository Structure
 
@@ -16,9 +18,11 @@ recommended best practices for observational causal estimation.
 │   ├── FINAL_PUBLIC_experimental.parquet    # Randomized A/B sample (435,170 obs)
 │   └── FINAL_PUBLIC_observed.parquet        # Observational sample (445,286 obs)
 ├── notebooks/
-│   └── 01_main_results.ipynb                # §4 main results: Figures 1–3, Table 2
+│   └── 01_main_results.ipynb                # Common-sample estimates and benchmark comparisons
 ├── src/                                     # Reusable Python modules
 │   ├── data_loading.py                      # Data loading + covariate list
+│   ├── main_cutoff_validation.py            # Actual-treatment analysis and saved-run validation
+│   ├── placebo_validation.py                # Untreated-source placebo and shared nuisance helpers
 │   ├── propensity.py                        # FLAML-tuned LGBM propensity ensembles
 │   ├── trimming.py                          # Crump et al. (2009) optimal trimming
 │   ├── estimators.py                        # ATE estimators (Reg, OM, IPW, PSM, DR)
@@ -28,12 +32,13 @@ recommended best practices for observational causal estimation.
 │   ├── utils.py                             # Cross-fitting + ensembling utilities
 │   ├── cate.py                              # CATE meta-learners (additional)
 │   └── sensitivity.py                       # Sensitivity analysis (additional)
-├── saved_outputs/                           # Pre-computed artifacts for fast replication
+├── saved_outputs/                           # Published artifacts; not inputs to common-sample runs
 │   ├── prop_averaged_FLAML_FINAL_LGBM.pkl   #   observational propensity scores
 │   ├── exp_dr_ate_FLAML_LGBM_Continuous.pkl #   experimental DR benchmark
 │   ├── *_hyperparams.pkl                    #   FLAML-tuned LGBM hyperparameter dicts
 │   └── *_ate_psm_pass_noreplace.pkl         #   cached PSM results (R Matching pkg)
 ├── requirements.txt
+├── tests/                                   # Construction, inference, and real-model checks
 └── README.md
 ```
 
@@ -57,59 +62,111 @@ pip install -r requirements.txt
 
 ### 3. Run the main notebook
 
+Use Python 3.10 or newer and a Jupyter frontend with the environment above
+selected as its kernel. If needed, install the notebook frontend separately:
+
 ```bash
+pip install notebook
 jupyter notebook notebooks/01_main_results.ipynb
 ```
 
-With the default flags (`RERUN_ALL=False`, `RUN_PSM=False`), the notebook loads
-pre-computed FLAML hyperparameters and cached PSM results from `saved_outputs/`,
-cross-fits fresh LGBM nuisance models on the public data, and reproduces
-**Figures 1–3** and **Table 2** in a few minutes on a laptop.
+The notebook fits fresh nuisance models and experimental benchmarks for both
+outcomes. Its default bounded configuration uses three outer cross-fitting
+folds, three-fold FLAML tuning within each training fold, 30 seconds per search,
+at most 30 search iterations, and four worker threads. It uses **single selected
+LightGBM models, not ensembles**, and takes approximately 20-30 minutes on the
+full public data. Search budgets exclude final refits and overhead.
 
-### 4. (Optional) Re-run from scratch
+The main tables use the common analysis sample and a shared covariate-overlap
+rule. The as-released sample is also fitted under the same model settings as
+a sample-definition sensitivity. This is not an exact numerical replication
+of the paper's ensembles or separate pooled-outcome EconML fit.
 
-```python
-RERUN_ALL = True      # full FLAML AutoML search (slow; minutes–hours)
-RUN_PSM   = True      # recompute PSM via R (~30 min/call); see step 5
-```
+Every execution writes a new timestamped directory under
+`saved_outputs_main_common_cutoff`. Existing results are not overwritten.
+The notebook does **not** load the published propensity arrays, nuisance
+hyperparameters, experimental benchmarks, or matching results from
+`saved_outputs`, because fitted quantities must correspond to the eligible sample.
 
-### 5. (Optional) Install R for propensity score matching
+### 4. Command-line execution and validation
 
-PSM uses R's [`Matching`](https://cran.r-project.org/package=Matching) package
-(Sekhon 2011) via `rpy2`. PSM with `replace=FALSE, ties=FALSE` on the trimmed
-sample (~300k rows) takes ~30 minutes per call. If R is not installed or
-`RUN_PSM=False`, the notebook falls back to cached PSM results.
+From the repository root:
 
 ```bash
-# 1. Install R: https://cran.r-project.org/
-# 2. Install rpy2 + Matching:
-pip install rpy2==3.6.7
-Rscript -e 'install.packages("Matching", repos="https://cran.r-project.org")'
+python -m unittest discover -s tests -p "test_*validation.py" -v
+python -m src.main_cutoff_validation --continuous-upper 44 --time-budget 30 --jobs 4
 ```
 
-## What the Notebook Does
+The analysis checks source data, actual treatment labels, sample eligibility,
+fold coverage and train/test separation, saved-model predictions, overlap
+masks, and reported estimates, standard errors, confidence intervals and
+p-values. It archives the exact source and records input/code hashes and
+package versions. Recheck a completed run without refitting:
 
-| Step | Description | Paper reference |
-|------|-------------|-----------------|
-| 1 | Load public experimental & observational datasets | §2 |
-| 2 | Compute naive difference-in-means | §4 |
-| 3 | Estimate propensity scores (ensembled, tuned LGBM) | §4 |
-| 4 | Propensity score distributions | Figure 1 |
-| 5 | Apply Crump et al. (2009) optimal trimming | §4, Table 2 |
-| 6 | Establish experimental ground-truth benchmark | §4 |
-| 7 | Fit tuned, ensembled nuisance models (cross-fit) | §4 |
-| 8 | Estimate ATE with five methods | §4, Figure 2 |
-| 9 | Compare trimmed vs. untrimmed results | §4, Figure 3 |
+```bash
+python -m src.main_cutoff_validation --verify-output <run-directory>
+```
+
+If the working code has changed, run this command from the completed run's
+`source_snapshot` directory with `--verify-output ..` instead. The source-hash
+check is not bypassed.
+
+### 5. Appendix A control-sample placebo
+
+```bash
+python -m src.placebo_validation --continuous-upper 44 --time-budget 30 --jobs 4
+```
+
+This separate check uses only actually untreated devices in both sources,
+assigns a new pseudo-treatment indicator to experimental controls, and estimates
+experimental-minus-observational outcome contrasts. It fits new source
+propensity models and applies the same eligibility rule to both outcomes.
+Results are saved separately under `saved_outputs_placebo`. A null contrast
+does not establish equivalence or unconfoundedness of actual adoption.
+
+## Sample definition and overlap
+
+The public file counts in the repository structure describe the released files,
+not the sample after analysis eligibility. Both released files already
+incorporate within-source continuous-outcome truncation. The common rule
+retains `Outcome_Continuous <= 44` and drops rows above it; it does not
+winsorize values or recompute a percentile. On the current files, it retains
+all experimental rows and removes observational rows from both actual
+treatment arms. The notebook reports the exact counts.
+
+This outcome-based eligibility is separate from Crump propensity-overlap
+selection. For the primary shared-region comparison, the observational
+adoption-propensity model is evaluated on both sources, and the same interval
+is applied to both. **Experimental IPW/AIPW weighting uses experimental
+treatment probabilities**, not observational adoption probabilities.
+Full-sample and cohort-specific propensity-region results are also reported;
+the latter need not identify the same covariate region across sources.
+
+Outcome-dependent selection can change the estimand and compromise
+randomization. Harmonized eligibility does not recover excluded observations
+or identify an untruncated population effect. Confidence intervals are
+pointwise, assume independent rows and appropriate nuisance/overlap
+conditions, and do not include repeated model-selection or learned-boundary
+uncertainty. A shared region is not exact covariate-distribution reweighting.
 
 ### Estimators
 
-| Estimator | Method |
+| Estimator | Method and inference |
 |---|---|
-| **Reg** | OLS on `y ~ D + W` | 
-| **OM** | Outcome modeling (cross-fit) |
-| **IPW** | Inverse probability weighting (cross-fit) | 
-| **PSM** | 1-NN propensity-score matching (R `Matching`) | 
-| **DR** | Cross-fit AIPW via EconML `LinearDRLearner` | 
+| **Reg** | OLS on `y ~ D + W`; HC1 robust covariance |
+| **OM** | Cross-fitted treatment-arm models; residual-MSE SE approximation |
+| **IPW** | Unnormalized inverse-probability score; plug-in score SE |
+| **DR** | Direct cross-fitted AIPW sharing OM nuisances; score SE |
+
+Propensity tuning minimizes classification log loss; both outcome models
+minimize regression RMSE. Actual-treatment DR explicitly clips propensity
+to `[0.01, 0.99]` and retains an unclipped diagnostic. No probability-calibration
+claim is made for the RMSE binary regressors. OM and IPW intervals have additional
+non-orthogonal nuisance-estimation limitations.
+
+PSM requires a separate analysis with R's `Matching` package. The bounded
+Python workflow checks its availability and reports PSM as **not run**;
+it never substitutes an unrelated cached estimate or fabricated matching SE.
 
 ## Citation
 

@@ -14,6 +14,20 @@ The two datasets share an identical schema (44 columns) and differ only in how t
 
 Having both a randomized experiment and a parallel observational study on the same population enables researchers to validate observational causal inference estimators against the experimental ground truth.
 
+## Analysis Sample
+
+The row counts above describe the released files. They already incorporate
+within-source truncation of the continuous outcome. The main replication
+notebook uses a common eligibility rule, `Outcome_Continuous <= 44`, for both
+sources, both actual treatment arms, and both outcomes. Observations above the
+bound are excluded; their outcome values are not capped or replaced.
+
+No further within-source percentile is estimated from these files. The
+notebook reports exact eligibility counts before separately applying its
+covariate-based propensity-overlap rule. Eligibility based on an outcome
+defines a selected population and should not be interpreted as preserving
+randomization or identifying an effect for the untruncated population.
+
 ## Variable Descriptions
 
 ### Outcome Variables
